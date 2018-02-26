@@ -1,8 +1,0 @@
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\bin\Debug\netstandard1.4\StellarMissions.deps.json
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\bin\Debug\netstandard1.4\StellarMissions.dll
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\bin\Debug\netstandard1.4\StellarMissions.pdb
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\obj\Debug\netstandard1.4\StellarMissions.csprojResolveAssemblyReference.cache
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\obj\Debug\netstandard1.4\StellarMissions.csproj.CoreCompileInputs.cache
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\obj\Debug\netstandard1.4\StellarMissions.AssemblyInfo.cs
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\obj\Debug\netstandard1.4\StellarMissions.dll
-C:\Users\FreakingBarbarians\Documents\Visual Studio 2017\Projects\ClassLibrary1\StellarMissions\obj\Debug\netstandard1.4\StellarMissions.pdb
