@@ -10,6 +10,10 @@ namespace StellarMissions
         static LogBook() {
         }
 
+        public static void UnregisterAll() {
+            root.Clear();
+        }
+
         public static void ClearAll() {
             foreach(Dictionary<string, object> dict in root.Values) {
                 dict.Clear();
@@ -81,6 +85,8 @@ namespace StellarMissions
     }
 
     public class Not : Predicate {
+        public Not(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             if (args[0] is Predicate)
@@ -95,6 +101,8 @@ namespace StellarMissions
     }
 
     public class Or : Predicate{
+        public Or(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             foreach (object predicate in args) {
@@ -114,6 +122,8 @@ namespace StellarMissions
     }
 
     public class And : Predicate{
+        public And(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             foreach (object predicate in args)
@@ -135,6 +145,8 @@ namespace StellarMissions
     }
 
     public class EqualDouble : Predicate {
+        public EqualDouble(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             return Equals<double>(args);
@@ -142,6 +154,8 @@ namespace StellarMissions
     }
 
     public class GreaterThanDouble : Predicate {
+        public GreaterThanDouble(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             return GreaterThan<double>(args);
@@ -150,6 +164,8 @@ namespace StellarMissions
 
     public class GreaterThanFloat : Predicate
     {
+        public GreaterThanFloat(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             return GreaterThan<float>(args);
@@ -158,6 +174,8 @@ namespace StellarMissions
 
     public class EqualFloat : Predicate
     {
+        public EqualFloat(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             return Equals<float>(args);
@@ -166,6 +184,8 @@ namespace StellarMissions
 
     public class GreaterThanInt: Predicate
     {
+        public GreaterThanInt(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             return GreaterThan<int>(args);
@@ -174,6 +194,8 @@ namespace StellarMissions
 
     public class EqualInt : Predicate
     {
+        public EqualInt(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             return Equals<int>(args);
@@ -182,6 +204,8 @@ namespace StellarMissions
 
     public class EqualBool : Predicate
     {
+        public EqualBool(params object[] args) : base(args) { }
+
         public override bool Evaluate()
         {
             return Equals<bool>(args);
