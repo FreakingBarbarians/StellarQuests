@@ -5,88 +5,29 @@ namespace StellarMissions
 {
 
     public class LogBook {
-        private static Dictionary<string, int> int_values;
-        private static Dictionary<string, float> float_values;
-        private static Dictionary<string, double> double_values;
-        private static Dictionary<string, bool> bool_values;
+        private static Dictionary<Type, Dictionary<string, object>> root = new Dictionary<Type, Dictionary<string, object>>();
 
         static LogBook() {
-            int_values = new Dictionary<string, int>();
-            float_values = new Dictionary<string, float>();
-            double_values = new Dictionary<string, double>();
-            bool_values = new Dictionary<string, bool>();
         }
 
         public static void ClearAll() {
-            int_values.Clear();
-            float_values.Clear();
-            double_values.Clear();
-            bool_values.Clear();
-        }
-
-        public static int GetInt(string key) {
-            if (int_values.ContainsKey(key))
-            {
-                return int_values[key];
-            }
-            else {
-                // @TODO: think about how to return error messages.
-                return int.MinValue;
+            foreach(Dictionary<string, object> dict in root.Values) {
+                dict.Clear();
             }
         }
 
-        public static float GetFloat(string key) {
-            if (float_values.ContainsKey(key))
-            {
-                return float_values[key];
-            }
-            else
-            {
-                // @TODO: think about how to return error messages.
-                return float.MinValue;
-            }
+        public static void RegisterLog(Type type) {
+            Dictionary<string, object> dc = new Dictionary<string, object>();
+            root.Add(type, dc);
         }
 
-        public static double GetDouble(string key) {
-            if (double_values.ContainsKey(key))
-            {
-                return double_values[key];
-            }
-            else
-            {
-                // @TODO: think about how to return error messages.
-                return Double.MinValue;
-            }
+        public static void Set<T>(string key, T val) where T : IComparable {
+            root[typeof(T)][key] = val;
         }
 
-        public static bool GetBool(string key)
-        {
-            if (double_values.ContainsKey(key))
-            {
-                return bool_values[key];
-            }
-            else
-            {
-                // @TODO: think about how to return error messages.
-                return false;
-            }
-        }
-
-        public static void SetInt(string key, int val) {
-            int_values[key] = val;
-        }
-
-        public static void SetFloat(string key, float val) {
-            float_values[key] = val;
-        }
-
-        public static void SetDouble(string key, double val) {
-            double_values[key] = val;
-        }
-
-        public static void SetBool(string key, bool val) {
-            bool_values[key] = val;
-        }
+        public static T Get<T>(string key) where T : IComparable {
+            return (T)root[typeof(T)][key];
+        } 
     }
 
     public class Mission
@@ -125,53 +66,17 @@ namespace StellarMissions
 
         public abstract bool Evaluate();
 
-        public static bool EqualDouble(params object[] args)
-        {
-            double x = args[0].GetType() == typeof(string) ? LogBook.GetDouble((string)args[0]) : (double)args[0];
-            double y = args[1].GetType() == typeof(string) ? LogBook.GetDouble((string)args[1]) : (double)args[1];
-            return x == y;
+        // strings will always be ref-type
+        public static bool GreaterThan<T>(params object[] args) where T : IComparable{
+            T x = args[0].GetType() == typeof(string) ? LogBook.Get<T>((string)args[0]) : (T)args[0];
+            T y = args[1].GetType() == typeof(string) ? LogBook.Get<T>((string)args[1]) : (T)args[1];
+            return x.CompareTo(y) > 0;
         }
 
-        public static bool GreaterThanInt(params object[] args)
-        {
-            int x = args[0].GetType() == typeof(string) ? LogBook.GetInt((string)args[0]) : (int)args[0];
-            int y = args[1].GetType() == typeof(string) ? LogBook.GetInt((string)args[1]) : (int)args[1];
-            return x > y;
-        }
-
-        public static bool GreaterThanFloat(params object[] args)
-        {
-            float x = args[0].GetType() == typeof(string) ? LogBook.GetFloat((string)args[0]) : (float)args[0];
-            float y = args[1].GetType() == typeof(string) ? LogBook.GetFloat((string)args[1]) : (float)args[1];
-            return x > y;
-        }
-
-        public static bool GreaterThanDouble(params object[] args)
-        {
-            double x = args[0].GetType() == typeof(string) ? LogBook.GetDouble((string)args[0]) : (double)args[0];
-            double y = args[1].GetType() == typeof(string) ? LogBook.GetDouble((string)args[1]) : (double)args[1];
-            return x > y;
-        }
-
-        public static bool EqualBool(params object[] args)
-        {
-            bool x = args[0].GetType() == typeof(string) ? LogBook.GetBool((string)args[0]) : (bool)args[0];
-            bool y = args[1].GetType() == typeof(string) ? LogBook.GetBool((string)args[1]) : (bool)args[1];
-            return x == y;
-        }
-
-        public static bool EqualInt(params object[] args)
-        {
-            int x = args[0].GetType() == typeof(string) ? LogBook.GetInt((string)args[0]) : (int)args[0];
-            int y = args[1].GetType() == typeof(string) ? LogBook.GetInt((string)args[1]) : (int)args[1];
-            return x == y;
-        }
-
-        public static bool EqualFloat(params object[] args)
-        {
-            float x = args[0].GetType() == typeof(string) ? LogBook.GetFloat((string)args[0]) : (float)args[0];
-            float y = args[1].GetType() == typeof(string) ? LogBook.GetFloat((string)args[1]) : (float)args[1];
-            return x == y;
+        public static bool Equals<T>(params object[] args) where T : IComparable{
+            T x = args[0].GetType() == typeof(string) ? LogBook.Get<T>((string)args[0]) : (T)args[0];
+            T y = args[1].GetType() == typeof(string) ? LogBook.Get<T>((string)args[1]) : (T)args[1];
+            return x.Equals(y);
         }
     }
 
@@ -232,14 +137,14 @@ namespace StellarMissions
     public class EqualDouble : Predicate {
         public override bool Evaluate()
         {
-            return EqualDouble(args);
+            return Equals<double>(args);
         }
     }
 
     public class GreaterThanDouble : Predicate {
         public override bool Evaluate()
         {
-            return GreaterThanDouble(args);
+            return GreaterThan<double>(args);
         }
     }
 
@@ -247,7 +152,7 @@ namespace StellarMissions
     {
         public override bool Evaluate()
         {
-            return GreaterThanFloat(args);
+            return GreaterThan<float>(args);
         }
     }
 
@@ -255,7 +160,7 @@ namespace StellarMissions
     {
         public override bool Evaluate()
         {
-            return EqualFloat(args);
+            return Equals<float>(args);
         }
     }
 
@@ -263,7 +168,7 @@ namespace StellarMissions
     {
         public override bool Evaluate()
         {
-            return GreaterThanInt(args);
+            return GreaterThan<int>(args);
         }
     }
 
@@ -271,7 +176,7 @@ namespace StellarMissions
     {
         public override bool Evaluate()
         {
-            return EqualInt(args);
+            return Equals<int>(args);
         }
     }
 
@@ -279,7 +184,7 @@ namespace StellarMissions
     {
         public override bool Evaluate()
         {
-            return EqualBool(args);
+            return Equals<bool>(args);
         }
     }
 }
