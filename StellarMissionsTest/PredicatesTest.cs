@@ -88,8 +88,8 @@ namespace StellarMissionsTest
                 float v2 = (float)(rand.NextDouble() - 0.5) * 100;
                 LogBook.Set<float>("p2", (float)(rand.NextDouble() - 0.5) * 100);
 
-                bool v3 = rand.Next(-1, 1) > 0 ? true:false;
-                LogBook.Set<bool>("p3", rand.Next(-1, 1) > 0 ? true : false);
+                bool v3 = rand.Next(-2, 2) > 0 ? true:false;
+                LogBook.Set<bool>("p3", rand.Next(-2, 2) > 0 ? true : false);
 
                 int v4 = rand.Next(-2, 2);
                 LogBook.Set<int>("p4", rand.Next(-2, 2));

@@ -34,6 +34,9 @@ namespace StellarMissions
         } 
     }
 
+    // likely will have a "Frontier" of objectives
+    // Perhaps a mapping of variables to predicates->milestone and back would be useful
+    // This way we can do lazy evaluation instead of a periodic poll!
     public class Mission
     {
         public enum MissionStatus
@@ -50,11 +53,48 @@ namespace StellarMissions
     }
 
     public class Milestone {
+        // Consider adding something that generates && enforces the correct conditions.
+        
+        // logs the report of the last  evaluation attempt
+        //                name    success? message
+        public List<Tuple<string, bool,    string>> report;
         public List<Condition> conditions;
+        public List<Milestone> Paths;
+        public List<Milestone> Exclusions;
+
+        public bool Evaluate() {
+            bool result = true;
+            report.Clear();
+            foreach (Condition cond in conditions) {
+                if (!cond.Evaluate())
+                {
+                    report.Add(new Tuple<string, bool, string>(cond.Name, false, cond.FailureMessage));
+                    result = false;
+                }
+                else {
+                    report.Add(new Tuple<string, bool, string>(cond.Name, true, cond.FailureMessage));
+                } 
+            }
+            return result;
+        }
     }
 
     public class Condition {
+        Predicate predicate;
+        public readonly string Name;
+        public readonly string SuccessMessage;
+        public readonly string FailureMessage;
 
+        public Condition(Predicate predicate, string name, string successMessage = "", string failureMessage = "") {
+            this.predicate = predicate;
+            this.Name = name;
+            this.SuccessMessage = successMessage;
+            this.FailureMessage = failureMessage;
+        }
+
+        public bool Evaluate() {
+            return predicate.Evaluate();
+        }
     }
 
     // lets expose some basic ones and leave the rest for
