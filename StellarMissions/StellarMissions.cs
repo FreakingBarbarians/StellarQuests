@@ -33,7 +33,7 @@ namespace StellarMissions
 
             if (reverse_root.ContainsKey(key)) {
                 foreach (Mission mission in reverse_root[key]) {
-                    
+
                 }
             }
         }
@@ -57,6 +57,26 @@ namespace StellarMissions
         }
     }
 
+    public class StellarQuestMessage {
+        public enum QuestMessage{
+            FAIL,
+            ACTIVATED,
+            DISCOVERED
+        };
+
+        public readonly QuestMessage Message;
+
+        public Milestone MilestoneData;
+        public Mission MissionData;
+
+        public StellarQuestMessage(QuestMessage message, Milestone milestoneData = null, Mission missionData = null) {
+            Message = message;
+            MilestoneData = milestoneData;
+            MissionData = missionData;
+        }
+
+    }
+
     // likely will have a "Frontier" of objectives
     // Perhaps a mapping of variables to predicates->milestone and back would be useful
     // This way we can do lazy evaluation instead of a periodic poll!
@@ -73,7 +93,7 @@ namespace StellarMissions
 
         public readonly string Name;
         public List<Milestone> Frontier;
-        public MissionStatus mission_status { get; private set; }
+        public MissionStatus Status { get; private set; }
         private Dictionary<string, List<Milestone>> VariableToMilestone = new Dictionary<string, List<Milestone>>();
 
         public Mission(string Name)
@@ -116,32 +136,30 @@ namespace StellarMissions
         public IEnumerable<String> GetVariableNames() {
             return (from item in VariableToMilestone.Keys select item).Distinct();
         }
-
     }
 
     // consider passing state changes externally via messages.
 
     public class Milestone {
         // Consider adding something that generates && enforces the correct conditions.
-        
+
         // logs the report of the last  evaluation attempt
         //                name    success? message
-        public List<Tuple<string, bool,    string>> report;
-        public List<Condition> Conditions;
-        public List<Milestone> Paths;
-        public List<Milestone> Exclusions;
-
         public string Name;
+        public List<Tuple<string, bool, string>> report;
+        public List<Condition> Conditions;
+        public Condition VisibilityCondition;
+        public List<Milestone> Paths;
 
         // When does a Milestone fail? Can they fail? hmm...
         // I guess we just have terminal nodes...
 
-        public Milestone(string Name) {
-            this.Name = Name;
+        public Milestone(string name, Condition visibilityCondition = null) {
+            VisibilityCondition = visibilityCondition == null ? new TrueCondition("default") : visibilityCondition;
+            this.Name = name;
             report = null;
             Conditions = new List<Condition>();
             Paths = new List<Milestone>();
-            Exclusions = new List<Milestone>();
         }
 
         public bool Evaluate() {
@@ -162,6 +180,13 @@ namespace StellarMissions
 
         public List<Milestone> GetPaths() {
             return Paths;
+        }
+
+        public void AddPath(Milestone milestone) {
+            if (Paths.Contains(milestone)) {
+                return;
+            }
+            Paths.Add(milestone);
         }
 
         public void RegisterCondition(Condition condition) {
@@ -190,6 +215,15 @@ namespace StellarMissions
         public readonly string SuccessMessage;
         public readonly string FailureMessage;
 
+        protected Condition() { }
+
+        protected Condition(string name, string successMessage = "", string failureMessage = "")
+        {
+            this.Name = name;
+            this.SuccessMessage = successMessage;
+            this.FailureMessage = failureMessage;
+        }
+
         public Condition(Predicate predicate, string name, string successMessage = "", string failureMessage = "") {
             this.predicate = predicate;
             this.Name = name;
@@ -197,12 +231,19 @@ namespace StellarMissions
             this.FailureMessage = failureMessage;
         }
 
-        public bool Evaluate() {
+        public virtual bool Evaluate() {
             return predicate.Evaluate();
         }
 
         public IEnumerable<String> GetVariableNames() {
             return predicate.GetVariableNames();
+        }
+    }
+
+    public class TrueCondition : Condition {
+        public TrueCondition(string name, string successMessage = "", string failureMessage = "") :base(name, successMessage, failureMessage) { }
+        override public bool Evaluate() {
+            return true;
         }
     }
 
