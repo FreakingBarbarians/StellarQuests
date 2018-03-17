@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace StellarMissions
@@ -6,18 +7,20 @@ namespace StellarMissions
 
     public class LogBook {
         private static Dictionary<Type, Dictionary<string, object>> root = new Dictionary<Type, Dictionary<string, object>>();
-
+        private static Dictionary<string, List<Mission>> reverse_root = new Dictionary<string, List<Mission>>();
         static LogBook() {
         }
 
         public static void UnregisterAll() {
             root.Clear();
+            reverse_root.Clear();
         }
 
         public static void ClearAll() {
-            foreach(Dictionary<string, object> dict in root.Values) {
+            foreach (Dictionary<string, object> dict in root.Values) {
                 dict.Clear();
             }
+            reverse_root.Clear();
         }
 
         public static void RegisterLog(Type type) {
@@ -27,11 +30,31 @@ namespace StellarMissions
 
         public static void Set<T>(string key, T val) where T : IComparable {
             root[typeof(T)][key] = val;
+
+            if (reverse_root.ContainsKey(key)) {
+                foreach (Mission mission in reverse_root[key]) {
+                    
+                }
+            }
         }
 
         public static T Get<T>(string key) where T : IComparable {
             return (T)root[typeof(T)][key];
-        } 
+        }
+
+        public static void RegisterMission(Mission mission) {
+            foreach (String variable in mission.GetVariableNames()) {
+                if (reverse_root.ContainsKey(variable))
+                {
+                    reverse_root[variable].Add(mission);
+                }
+                else {
+                    List<Mission> missionList = new List<Mission>();
+                    missionList.Add(mission);
+                    reverse_root[variable] = missionList;
+                }
+            }
+        }
     }
 
     // likely will have a "Frontier" of objectives
@@ -48,9 +71,55 @@ namespace StellarMissions
             FINISHED
         }
 
+        public readonly string Name;
+        public List<Milestone> Frontier;
         public MissionStatus mission_status { get; private set; }
+        private Dictionary<string, List<Milestone>> VariableToMilestone = new Dictionary<string, List<Milestone>>();
+
+        public Mission(string Name)
+        {
+            this.Name = Name;
+        }
+
+        public void OnVariableChanged(string key) {
+            if (VariableToMilestone.ContainsKey(key)) {
+                foreach (Milestone milestone in VariableToMilestone[key]) {
+                    milestone.Evaluate(); // evaluate milestones
+                                          // consider how to send events!
+                                          // back to game
+                    /**
+                     * something like. ..
+                     * if(milestone.Evaluate()) {
+                     *  frontier.add(milestone.getPaths());
+                     *  Communicator.GenerateMessage(mission X's milestone Y passed);
+                     * }
+                     */
+                }
+            }
+        }
+
+        public void RegisterMilestone(Milestone milestone) {
+            foreach (String variable in milestone.GetVariableNames()) {
+                if (VariableToMilestone.ContainsKey(variable)) {
+                    if (!VariableToMilestone[variable].Contains(milestone))
+                    {
+                        VariableToMilestone[variable].Add(milestone);
+                    }
+                } else {
+                    List<Milestone> milestoneList = new List<Milestone>();
+                    milestoneList.Add(milestone);
+                    VariableToMilestone[variable] = milestoneList;
+                }
+            }
+        }
+
+        public IEnumerable<String> GetVariableNames() {
+            return (from item in VariableToMilestone.Keys select item).Distinct();
+        }
 
     }
+
+    // consider passing state changes externally via messages.
 
     public class Milestone {
         // Consider adding something that generates && enforces the correct conditions.
@@ -58,14 +127,27 @@ namespace StellarMissions
         // logs the report of the last  evaluation attempt
         //                name    success? message
         public List<Tuple<string, bool,    string>> report;
-        public List<Condition> conditions;
+        public List<Condition> Conditions;
         public List<Milestone> Paths;
         public List<Milestone> Exclusions;
+
+        public string Name;
+
+        // When does a Milestone fail? Can they fail? hmm...
+        // I guess we just have terminal nodes...
+
+        public Milestone(string Name) {
+            this.Name = Name;
+            report = null;
+            Conditions = new List<Condition>();
+            Paths = new List<Milestone>();
+            Exclusions = new List<Milestone>();
+        }
 
         public bool Evaluate() {
             bool result = true;
             report.Clear();
-            foreach (Condition cond in conditions) {
+            foreach (Condition cond in Conditions) {
                 if (!cond.Evaluate())
                 {
                     report.Add(new Tuple<string, bool, string>(cond.Name, false, cond.FailureMessage));
@@ -77,6 +159,29 @@ namespace StellarMissions
             }
             return result;
         }
+
+        public List<Milestone> GetPaths() {
+            return Paths;
+        }
+
+        public void RegisterCondition(Condition condition) {
+            Conditions.Add(condition); // extra stuff?
+        }
+
+        public void UnregisterCondition(Condition condition) {
+            Conditions.Remove(condition);
+        }
+
+        public IEnumerable<String> GetVariableNames() {
+            List<String> retval = new List<String>();
+
+            foreach (Condition condition in Conditions) {
+                retval.AddRange((from item in condition.GetVariableNames() select item));
+            }
+
+            return retval.Distinct();
+        }
+
     }
 
     public class Condition {
@@ -94,6 +199,10 @@ namespace StellarMissions
 
         public bool Evaluate() {
             return predicate.Evaluate();
+        }
+
+        public IEnumerable<String> GetVariableNames() {
+            return predicate.GetVariableNames();
         }
     }
 
@@ -121,6 +230,20 @@ namespace StellarMissions
             T x = args[0].GetType() == typeof(string) ? LogBook.Get<T>((string)args[0]) : (T)args[0];
             T y = args[1].GetType() == typeof(string) ? LogBook.Get<T>((string)args[1]) : (T)args[1];
             return x.Equals(y);
+        }
+
+        public IEnumerable<String> GetVariableNames() {
+            List<String> retval = new List<String>();
+            foreach(object obj in args) {
+                if (obj is String)
+                {
+                    retval.Add((string)obj);
+                }
+                else if (obj is Predicate) {
+                    retval.AddRange(((Predicate)obj).GetVariableNames());
+                }
+            }
+            return retval.Distinct();
         }
     }
 
@@ -184,71 +307,19 @@ namespace StellarMissions
         }
     }
 
-    public class EqualDouble : Predicate {
-        public EqualDouble(params object[] args) : base(args) { }
-
+    public class Equal<T> : Predicate where T : IComparable {
+        public Equal(params object[] args) : base(args) {}
         public override bool Evaluate()
         {
-            return Equals<double>(args);
+            return Predicate.Equals<T>(args);
         }
     }
 
-    public class GreaterThanDouble : Predicate {
-        public GreaterThanDouble(params object[] args) : base(args) { }
-
+    public class GreaterThan<T> : Predicate where T : IComparable {
+        public GreaterThan(params object[] args) : base(args) { }
         public override bool Evaluate()
         {
-            return GreaterThan<double>(args);
-        }
-    }
-
-    public class GreaterThanFloat : Predicate
-    {
-        public GreaterThanFloat(params object[] args) : base(args) { }
-
-        public override bool Evaluate()
-        {
-            return GreaterThan<float>(args);
-        }
-    }
-
-    public class EqualFloat : Predicate
-    {
-        public EqualFloat(params object[] args) : base(args) { }
-
-        public override bool Evaluate()
-        {
-            return Equals<float>(args);
-        }
-    }
-
-    public class GreaterThanInt: Predicate
-    {
-        public GreaterThanInt(params object[] args) : base(args) { }
-
-        public override bool Evaluate()
-        {
-            return GreaterThan<int>(args);
-        }
-    }
-
-    public class EqualInt : Predicate
-    {
-        public EqualInt(params object[] args) : base(args) { }
-
-        public override bool Evaluate()
-        {
-            return Equals<int>(args);
-        }
-    }
-
-    public class EqualBool : Predicate
-    {
-        public EqualBool(params object[] args) : base(args) { }
-
-        public override bool Evaluate()
-        {
-            return Equals<bool>(args);
+            return Predicate.GreaterThan<T>(args);
         }
     }
 }
