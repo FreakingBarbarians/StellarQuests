@@ -95,6 +95,7 @@ namespace StellarMissions
         public List<Milestone> Frontier;
         public MissionStatus Status { get; private set; }
         private Dictionary<string, List<Milestone>> VariableToMilestone = new Dictionary<string, List<Milestone>>();
+        public List<IMissionListener> listeners = new List<IMissionListener>();
 
         public Mission(string Name)
         {
@@ -114,6 +115,11 @@ namespace StellarMissions
                      *  Communicator.GenerateMessage(mission X's milestone Y passed);
                      * }
                      */
+
+                     foreach(IMissionListener listener in listeners) {
+                        listener.MissionUpdate(this);
+                     }
+
                 }
             }
         }
@@ -133,12 +139,27 @@ namespace StellarMissions
             }
         }
 
+        public void RegisterListener(IMissionListener listener) {
+            if(!listeners.Contains(listener)) {
+                listeners.Add(listener);    
+            }
+        }
+
+        public void UnregisterListener(IMissionListener listener) {
+            listeners.Remove(listener);
+        }
+
         public IEnumerable<String> GetVariableNames() {
             return (from item in VariableToMilestone.Keys select item).Distinct();
         }
+
+
     }
 
-    // consider passing state changes externally via messages.
+    // we use subscriber-obs pattern
+    public interface IMissionListener {
+        void MissionUpdate(Mission);
+    }
 
     public class Milestone {
         // Consider adding something that generates && enforces the correct conditions.
