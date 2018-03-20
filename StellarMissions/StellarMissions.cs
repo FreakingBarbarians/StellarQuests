@@ -167,6 +167,7 @@ namespace StellarMissions
         // logs the report of the last  evaluation attempt
         //                name    success? message
         public string Name;
+        //1: Name of condition, 2: Satisfaction of cond., 3. return message
         public List<Tuple<string, bool, string>> report;
         public List<Condition> Conditions;
         public Condition VisibilityCondition;
@@ -193,7 +194,7 @@ namespace StellarMissions
                     result = false;
                 }
                 else {
-                    report.Add(new Tuple<string, bool, string>(cond.Name, true, cond.FailureMessage));
+                    report.Add(new Tuple<string, bool, string>(cond.Name, true, cond.SuccessMessage));
                 } 
             }
             return result;
@@ -218,6 +219,7 @@ namespace StellarMissions
             Conditions.Remove(condition);
         }
 
+        // Select all variables from all conditions
         public IEnumerable<String> GetVariableNames() {
             List<String> retval = new List<String>();
 
@@ -261,6 +263,7 @@ namespace StellarMissions
         }
     }
 
+    // Condition that's always true
     public class TrueCondition : Condition {
         public TrueCondition(string name, string successMessage = "", string failureMessage = "") :base(name, successMessage, failureMessage) { }
         override public bool Evaluate() {
